@@ -313,8 +313,25 @@ export class GraphCtrl extends MetricsPanelCtrl {
 
     ThresholdMapper.alertToGraphThresholds(this.panel);
 
-    for (const series of this.seriesList) {
+    // Till we do things in data processor this mocks giving series different
+    // colors and the offset series dashes.
+    let s1 = 'chrono-a/chronocollector-frpzv';
+    let s2 = 'chrono-a/chronocollector-jc892';
+
+    for (let i = 0; i < this.seriesList.length; i++) {
+      const series = this.seriesList[i];
       series.applySeriesOverrides(this.panel.seriesOverrides);
+
+      // For a comparison series set the series color and dashed line.
+      // In the actual implementation there is a special 'series' tag allowing us
+      // to get this information and colors / dashed property.
+      if (series.label.includes(s1)) {
+        series.dashes.show = true;
+        series.lines.lineWidth = 0;
+        series.color = '#7EB26D';
+      } else if (series.label.includes(s2)) {
+        series.color = '#7EB26D';
+      }
 
       // Always use the configured field unit
       if (series.unit) {

@@ -3,6 +3,7 @@ import { appEvents } from 'app/core/core';
 import { CoreEvents } from 'app/types';
 import { textUtil, systemDateFormats, LegacyGraphHoverClearEvent, LegacyGraphHoverEvent } from '@grafana/data';
 
+// TODO (@shreyas): Augments series list function to also return SeriesAttributes map.
 export default function GraphTooltip(this: any, elem: any, dashboard: any, scope: any, getSeriesFn: any) {
   const self = this;
   const ctrl = scope.ctrl;
@@ -58,7 +59,7 @@ export default function GraphTooltip(this: any, elem: any, dashboard: any, scope
     $tooltip.html(innerHtml).place_tt(pos.pageX + 20, pos.pageY);
   };
 
-  this.getMultiSeriesPlotHoverInfo = function (seriesList: any[], pos: { x: number }) {
+  this.getMultiSeriesPlotHoverInfo = function (seriesList: any[], pos: { x: number }, compareMode: boolean) {
     let value, i, series, hoverIndex, hoverDistance, pointTime, yaxis;
     // 3 sub-arrays, 1st for hidden series, 2nd for left yaxis, 3rd for right yaxis.
     let results: any = [[], [], []];
@@ -68,8 +69,20 @@ export default function GraphTooltip(this: any, elem: any, dashboard: any, scope
 
     let minDistance, minTime;
 
+    // NB (@shreyas): Till we actually process things in data processor, this
+    // just mocks selecting two series to be showin in compare mode.
+    const s1 = 'chrono-a/chronocollector-frpzv';
+    const s2 = 'chrono-a/chronocollector-jc892';
+
     for (i = 0; i < seriesList.length; i++) {
       series = seriesList[i];
+
+      // If in compare mode we will only pick the two series that are to compare.
+      if (compareMode) {
+        if (!series.label.includes(s1) && !series.label.includes(s2)) {
+          continue;
+        }
+      }
 
       if (!series.data.length || (panel.legend.hideEmpty && series.allIsNull)) {
         // Init value so that it does not brake series sorting
@@ -144,6 +157,7 @@ export default function GraphTooltip(this: any, elem: any, dashboard: any, scope
   };
 
   elem.mouseleave(() => {
+    console.log('leave mouse');
     if (panel.tooltip?.shared) {
       const plot = elem.data().plot;
       if (plot) {
@@ -232,10 +246,22 @@ export default function GraphTooltip(this: any, elem: any, dashboard: any, scope
       tooltipFormat = systemDateFormats.fullDate;
     }
 
-    if (allSeriesMode) {
+    // The below picks the compare series and ensures that gets displayed
+    // along side the series we are hovering on in single series mode.
+    const s1 = 'chrono-a/chronocollector-frpzv';
+    const s2 = 'chrono-a/chronocollector-jc892';
+    let compareMode = false;
+    if (item) {
+      series = seriesList[item.seriesIndex];
+      if (series.label.includes(s1) || series.label.includes(s2)) {
+        compareMode = true;
+      }
+    }
+
+    if (allSeriesMode || compareMode) {
       plot.unhighlight();
 
-      const seriesHoverInfo = self.getMultiSeriesPlotHoverInfo(plotData, pos);
+      const seriesHoverInfo = self.getMultiSeriesPlotHoverInfo(plotData, pos, compareMode);
 
       seriesHtml = '';
 
@@ -282,7 +308,6 @@ export default function GraphTooltip(this: any, elem: any, dashboard: any, scope
     } else if (item) {
       // single series tooltip
       const color = textUtil.sanitize(item.series.color);
-      series = seriesList[item.seriesIndex];
       group = '<div class="graph-tooltip-list-item"><div class="graph-tooltip-series-name">';
       group += '<i class="fa fa-minus" style="color:' + color + ';"></i> ' + series.aliasEscaped + ':</div>';
 

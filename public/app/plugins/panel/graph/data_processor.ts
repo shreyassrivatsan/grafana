@@ -21,6 +21,12 @@ export class DataProcessor {
   constructor(private panel: any) {}
 
   getSeriesList(options: Options): TimeSeries[] {
+    // TOOD (@shreyas): Actually have this return a map of series id to
+    // attributes. Attributes contains - offset or not, color to use and
+    // related series to show on a hover. The labels on the query response will
+    // be modified to make this easy. All series will come back with tags
+    // - __series__ to detemine which series that should be paired
+    // - __ofset__ to indicate which should get dashes
     const list: TimeSeries[] = [];
     const { dataList, range } = options;
 

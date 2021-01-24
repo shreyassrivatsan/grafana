@@ -2,6 +2,8 @@ import { MenuItem } from '@grafana/ui';
 import { FlotDataPoint } from '@grafana/data';
 
 export class GraphContextMenuCtrl {
+  // TODO (@shreyas): This is the path taken to show things on a plot click.
+  // Still need to get this to work.
   private source?: FlotDataPoint | null;
   private scope?: any;
   menuItemsSupplier?: () => MenuItem[];
